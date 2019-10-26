@@ -1,10 +1,12 @@
-
+mod helper;
+use helper::dt_from_ymd_hms;
 
 use calendar::rule::Rule;
 use calendar::offset_kind::OffsetKind;
 use calendar::repetition_kind::RepetitionKind;
 use calendar::time_interval::TimeInterval;
 use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime};
+
 
 #[test]
 fn rule_works() {
@@ -24,25 +26,25 @@ fn rule_works() {
         inner_rules: Some(inner_rules)
     };
     
-    let iter = rule.get_iterator(NaiveDateTime::new(
-        NaiveDate::from_ymd(2001, 1, 1), NaiveTime::from_hms(0, 0, 0)),
-        NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(0, 0, 0)), 
-        NaiveDateTime::new(NaiveDate::from_ymd(2019, 2, 22), NaiveTime::from_hms(17, 17, 0)));
+    let iter = rule.get_iterator(
+        dt_from_ymd_hms(2001, 1, 1, 0, 0, 0),
+        dt_from_ymd_hms(2019, 1, 30, 0, 0, 0), 
+        dt_from_ymd_hms(2019, 2, 22, 17, 17, 0));
 
     let intervals: Vec<TimeInterval> = iter.take(30).collect();
 
     let vec = vec![
             TimeInterval {
-                start: NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(9, 15, 0)), 
-                end: NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(18, 00, 0))
+                start: dt_from_ymd_hms(2019, 1, 30, 9, 15, 0), 
+                end: dt_from_ymd_hms(2019, 1, 30, 18, 00, 0)
             },
             TimeInterval {
-                start: NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 31), NaiveTime::from_hms(9, 15, 0)), 
-                end: NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 31), NaiveTime::from_hms(18, 00, 0))
+                start: dt_from_ymd_hms(2019, 1, 31, 9, 15, 0), 
+                end: dt_from_ymd_hms(2019, 1, 31, 18, 00, 0)
             },
             TimeInterval {
-                start: NaiveDateTime::new(NaiveDate::from_ymd(2019, 2, 1), NaiveTime::from_hms(9, 15, 0)), 
-                end: NaiveDateTime::new(NaiveDate::from_ymd(2019, 2, 1), NaiveTime::from_hms(18, 00, 0))
+                start: dt_from_ymd_hms(2019, 2, 1, 9, 15, 0), 
+                end: dt_from_ymd_hms(2019, 2, 1, 18, 00, 0)
             },
         ];
 
@@ -51,11 +53,12 @@ fn rule_works() {
         assert_eq!(intervals[i].end, vec[i].end);
     }
 
-    let little_interval: Vec<TimeInterval> = rule.get_iterator(NaiveDateTime::new(NaiveDate::from_ymd(2001, 1, 1), NaiveTime::from_hms(0, 0, 0)),
-        NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(10, 10, 0)), 
-        NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(11, 11, 0))).take(1).collect();
+    let little_interval: Vec<TimeInterval> = rule.get_iterator(
+        dt_from_ymd_hms(2001, 1, 1,  0, 0, 0),
+        dt_from_ymd_hms(2019, 1, 30, 10, 10, 0), 
+        dt_from_ymd_hms(2019, 1, 30, 11, 11, 0)).take(1).collect();
 
-    assert_eq!(little_interval[0].start, NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(10, 10, 0)));
-    assert_eq!(little_interval[0].end, NaiveDateTime::new(NaiveDate::from_ymd(2019, 1, 30), NaiveTime::from_hms(11, 11, 0)));
+    assert_eq!(little_interval[0].start, dt_from_ymd_hms(2019, 1, 30, 10, 10, 0));
+    assert_eq!(little_interval[0].end, dt_from_ymd_hms(2019, 1, 30, 11, 11, 0));
 
 }

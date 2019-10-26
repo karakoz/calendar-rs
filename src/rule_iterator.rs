@@ -113,14 +113,11 @@ fn get_inner_iterator(
     end: NaiveDateTime) 
         -> MultiRuleIterator {
 
-    MultiRuleIterator {
-        rules: &inner_rules,
-        from: start_offset,
-        to: end,
-        cur_date: None,
+    MultiRuleIterator::new(
+        inner_rules,
         cycle_start,
-        inner_iterators: None
-    }
+        start_offset,
+        end)
 }
 
 fn get_closest_offset_to_left(offset: NaiveDateTime, repetition: Duration, target: NaiveDateTime) -> NaiveDateTime {
