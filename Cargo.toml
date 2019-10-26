@@ -6,7 +6,7 @@ edition = "2018"
 
 [lib]
 name = "calendar"
-crate-type = ["dylib"] 
+crate-type = ["rlib", "dylib"] 
 
 [dependencies]
 chrono = "0.4.6"
