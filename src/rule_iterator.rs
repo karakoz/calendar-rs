@@ -41,11 +41,15 @@ impl<'a> Iterator for RuleIterator<'a> {
                         cur_offset = co + *rep_dur;
 
                         start = cur_offset;
-    
+
                         end = if self.to < start + self.rule.length {
                             self.to
                         } else {
                             start + self.rule.length
+                        };
+
+                        if start >= end {
+                            return None;
                         }
                     } else {
                         match self.rule.offset {
@@ -98,11 +102,36 @@ impl<'a> Iterator for RuleIterator<'a> {
                         return Some(TimeInterval { start, end })
                     }
                 },
-                _ => ()
+                _ => unimplemented!()
+            }
+        } else {
+            if let Some(_) = self.cur_offset {
+                return None;
+            }
+
+            match self.rule.offset {
+                OffsetKind::DateTime(_) => {
+                    unimplemented!()
+                },
+                OffsetKind::Duration(offset_dur) => {
+                    let cur_offset = self.cycle_start + offset_dur;
+
+                    let start = if self.from > cur_offset { self.from } else { cur_offset };
+                    let end = if self.to < cur_offset + self.rule.length { self.to } else { cur_offset + self.rule.length }; 
+                
+                    self.cur_offset = Some(cur_offset);
+
+                    if let Some(inner_rules) = &self.rule.inner_rules {
+
+                        self.inner_iterator = Some(get_inner_iterator(inner_rules, cur_offset, start, end));
+
+                        return self.next()
+                    } else {
+                        return Some(TimeInterval { start, end })
+                    }
+                }
             }
         }
-
-        None
     } 
 }
 

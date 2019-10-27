@@ -59,11 +59,11 @@ impl<'a> Iterator for MultiRuleIterator<'a> {
 
         if let Some(inner) = &mut self.inner_iterators {
             loop {
-                // if inner.len() <= self.cur_iterator_index {
-                //     self.inner_iterators = None;
-                //     self.cur_iterator_index = 0;
-                //     return None;
-                // }
+                if inner.len() <= self.cur_iterator_index {
+                    self.inner_iterators = None;
+                    self.cur_iterator_index = 0;
+                    return None;
+                }
 
                 let fi = &mut inner[self.cur_iterator_index];
 
