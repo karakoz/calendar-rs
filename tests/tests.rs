@@ -132,3 +132,61 @@ fn multi_rules() {
         assert_eq!(intervals[i].end, vec[i].end, "{}", i);
     }
 }
+
+#[test]
+fn year_repetition_two_days_after_two_twelve_hours() {
+    // the work day starts at 10:00am with duration 12 hours (ends at 10:00pm) 
+    let twelve_hour_day_rule = Rule {
+        offset: OffsetKind::Duration(Duration::hours(10)),
+        repetition: Some(RepetitionKind::Duration(Duration::days(1))),
+        length: Duration::hours(12),
+        inner_rules: None
+    };
+
+    let inner_rules = vec![Rule {
+        offset: OffsetKind::Duration(Duration::days(0)),
+        repetition: Some(RepetitionKind::Duration(Duration::days(4))),
+        length: Duration::days(2),
+        inner_rules: Some(vec![twelve_hour_day_rule])
+    }];
+
+    let rule = Rule {
+        offset: OffsetKind::DateTime(dt_from_ymd_hms(2001, 1, 1, 0, 0, 0)),
+        repetition: Some(RepetitionKind::Years(1)),
+        length: Duration::days(366),
+        inner_rules: Some(inner_rules)
+    };
+
+    
+    let iter = rule.get_iterator(
+        dt_from_ymd_hms(2001, 1, 1, 0, 0, 0), // start
+        dt_from_ymd_hms(2019, 10, 25, 0, 0, 0), // from // Fri
+        dt_from_ymd_hms(2019, 11, 1, 16, 15, 0)); // to
+
+    let intervals: Vec<TimeInterval> = iter.take(4).collect();
+
+    let vec = vec![
+            TimeInterval {
+                start: dt_from_ymd_hms(2019, 10, 25, 10, 0, 0), 
+                end: dt_from_ymd_hms(2019, 10, 25, 22, 00, 0)
+            },
+            TimeInterval {
+                start: dt_from_ymd_hms(2019, 10, 28, 10, 0, 0), 
+                end: dt_from_ymd_hms(2019, 10, 28, 22, 00, 0)
+            },
+            TimeInterval {
+                start: dt_from_ymd_hms(2019, 10, 29, 10, 0, 0), 
+                end: dt_from_ymd_hms(2019, 10, 29, 22, 00, 0)
+            },
+            TimeInterval {
+                start: dt_from_ymd_hms(2019, 11, 1, 10, 0, 0), 
+                end: dt_from_ymd_hms(2019, 11, 1, 16, 15, 0)
+            },
+            
+        ];
+
+    for i in 0..4 {
+        assert_eq!(intervals[i].start, vec[i].start, "{}", i);
+        assert_eq!(intervals[i].end, vec[i].end, "{}", i);
+    }
+}

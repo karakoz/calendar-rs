@@ -1,7 +1,7 @@
 use crate::multi_rule_iterator::MultiRuleIterator;
 use crate::time_interval::TimeInterval;
 use crate::rule::Rule;
-use chrono::{NaiveDateTime, Duration};
+use chrono::{NaiveDateTime, Datelike, Duration};
 use crate::repetition_kind::RepetitionKind;
 use crate::offset_kind::OffsetKind;
 
@@ -32,77 +32,72 @@ impl<'a> Iterator for RuleIterator<'a> {
         self.inner_iterator = None;
 
         if let Some(repetition) = &self.rule.repetition {
-            match repetition {
-                RepetitionKind::Duration(rep_dur) => {
-                    let start;
-                    let end;
-                    let cur_offset;
-                    if let Some(co) = self.cur_offset {
-                        cur_offset = co + *rep_dur;
+            let start;
+            let end;
+            let cur_offset;
+            if let Some(co) = self.cur_offset {
+                cur_offset = add_repetition(co, repetition);// co + *rep_dur;
 
-                        start = cur_offset;
+                start = cur_offset;
 
-                        end = if self.to < start + self.rule.length {
-                            self.to
+                end = if self.to < start + self.rule.length {
+                    self.to
+                } else {
+                    start + self.rule.length
+                };
+
+                if start >= end {
+                    return None;
+                }
+            } else {
+                match self.rule.offset {
+                    OffsetKind::DateTime(offset) => {
+                        let co = get_closest_offset(offset, repetition, self.from);
+
+                        if co + self.rule.length <= self.from {
+                            cur_offset = add_repetition(co, repetition); // co + *rep_dur;
                         } else {
-                            start + self.rule.length
-                        };
-
-                        if start >= end {
-                            return None;
+                            cur_offset = co;
                         }
-                    } else {
-                        match self.rule.offset {
-                            OffsetKind::DateTime(offset) => {
-                                let co = get_closest_offset_to_left(offset, *rep_dur, self.from);
 
-                                if co + self.rule.length <= self.from {
-                                    cur_offset = co + *rep_dur;
-                                } else {
-                                    cur_offset = co;
-                                }
+                        start = if self.from > cur_offset {
+                                        self.from
+                                    } else {
+                                        cur_offset
+                                    };
+                        end = if self.to < cur_offset + self.rule.length {
+                                        self.to
+                                    } else {
+                                        cur_offset + self.rule.length
+                                    };
+                        
+                    },
+                    OffsetKind::Duration(offset_dur) => {
+                        let co = get_closest_offset(self.cycle_start + offset_dur, repetition, self.from);
 
-                                start = if self.from > cur_offset {
-                                                self.from
-                                            } else {
-                                                cur_offset
-                                            };
-                                end = if self.to < cur_offset + self.rule.length {
-                                                self.to
-                                            } else {
-                                                cur_offset + self.rule.length
-                                            };
-                              
-                            },
-                            OffsetKind::Duration(offset_dur) => {
-                                let co = get_closest_offset_to_left(self.cycle_start + offset_dur, *rep_dur, self.from);
-
-                                if co + self.rule.length <= self.from {
-                                    cur_offset = co + *rep_dur;
-                                } else {
-                                    cur_offset = co;
-                                }
-
-
-                                start = if self.from > cur_offset { self.from } else { cur_offset };
-
-                                end = if self.to < cur_offset + self.rule.length { self.to } else { cur_offset + self.rule.length }; 
-                            }
+                        if co + self.rule.length <= self.from {
+                            cur_offset = add_repetition(co, repetition); // co + *rep_dur;
+                        } else {
+                            cur_offset = co;
                         }
+
+
+                        start = if self.from > cur_offset { self.from } else { cur_offset };
+
+                        end = if self.to < cur_offset + self.rule.length { self.to } else { cur_offset + self.rule.length }; 
                     }
+                }
+            }
 
-                    self.cur_offset = Some(cur_offset);
+            self.cur_offset = Some(cur_offset);
 
-                    if let Some(inner_rules) = &self.rule.inner_rules {
+            if let Some(inner_rules) = &self.rule.inner_rules {
 
-                        self.inner_iterator = Some(get_inner_iterator(inner_rules, cur_offset, start, end));
+                self.inner_iterator = Some(get_inner_iterator(inner_rules, cur_offset, start, end));
 
-                        return self.next()
-                    } else {
-                        return Some(TimeInterval { start, end })
-                    }
-                },
-                _ => unimplemented!()
+                return self.next()
+            } else {
+                return Some(TimeInterval { start, end })
             }
         } else {
             if let Some(_) = self.cur_offset {
@@ -135,6 +130,14 @@ impl<'a> Iterator for RuleIterator<'a> {
     } 
 }
 
+fn add_repetition(source: NaiveDateTime, rep: &RepetitionKind) -> NaiveDateTime {
+    match rep {
+        RepetitionKind::Duration(dur) => source + *dur,
+        RepetitionKind::Years(y) => source.with_year(source.year() + *y as i32).unwrap(),
+        _ => unimplemented!()
+    }
+}
+
 fn get_inner_iterator(
     inner_rules: &Vec<Rule>, 
     cycle_start: NaiveDateTime,
@@ -149,11 +152,25 @@ fn get_inner_iterator(
         end)
 }
 
-fn get_closest_offset_to_left(offset: NaiveDateTime, repetition: Duration, target: NaiveDateTime) -> NaiveDateTime {
-    let sub = target - offset;
+fn get_closest_offset(start: NaiveDateTime, repetition: &RepetitionKind, target: NaiveDateTime) -> NaiveDateTime {
+    match repetition {
+        RepetitionKind::Duration(repetition) => {
+            let sub = target - start;
 
-    let div = sub.num_seconds() / repetition.num_seconds();
+            let div = sub.num_seconds() / repetition.num_seconds();
 
-    offset + repetition * (div as i32)
+            start + *repetition * (div as i32)
+        },
+        RepetitionKind::Years(y) => {
+            let sub = target - start;            
+            // todo: this is a rough realization
+            let div = sub.num_seconds() / Duration::days(365 * *y as i64).num_seconds();
+
+            start.with_year(start.year() + (*y as i32) * div as i32).unwrap()
+        },
+        _ => {
+            unimplemented!()
+        }
+    }
 }
 

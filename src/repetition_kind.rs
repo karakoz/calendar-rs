@@ -3,8 +3,8 @@ use chrono::Duration;
 #[derive(Clone)]
 pub enum RepetitionKind {
     Duration(Duration),
-    Years(i32),
-    Months(i32),
+    Years(u32),
+    Months(u32),
 }
 
 
