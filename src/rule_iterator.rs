@@ -50,43 +50,30 @@ impl<'a> Iterator for RuleIterator<'a> {
                     return None;
                 }
             } else {
-                match self.rule.offset {
-                    OffsetKind::DateTime(offset) => {
-                        let co = get_closest_offset(offset, repetition, self.from);
+                let offset = 
+                    match self.rule.offset {
+                        OffsetKind::DateTime(offset) => offset,
+                        OffsetKind::Duration(offset_dur) => self.cycle_start + offset_dur
+                    };
 
-                        if co + self.rule.length <= self.from {
-                            cur_offset = add_repetition(co, repetition); // co + *rep_dur;
-                        } else {
-                            cur_offset = co;
-                        }
+                let co = get_closest_offset(offset, repetition, self.from);
 
-                        start = if self.from > cur_offset {
-                                        self.from
-                                    } else {
-                                        cur_offset
-                                    };
-                        end = if self.to < cur_offset + self.rule.length {
-                                        self.to
-                                    } else {
-                                        cur_offset + self.rule.length
-                                    };
-                        
-                    },
-                    OffsetKind::Duration(offset_dur) => {
-                        let co = get_closest_offset(self.cycle_start + offset_dur, repetition, self.from);
-
-                        if co + self.rule.length <= self.from {
-                            cur_offset = add_repetition(co, repetition); // co + *rep_dur;
-                        } else {
-                            cur_offset = co;
-                        }
-
-
-                        start = if self.from > cur_offset { self.from } else { cur_offset };
-
-                        end = if self.to < cur_offset + self.rule.length { self.to } else { cur_offset + self.rule.length }; 
-                    }
+                if co + self.rule.length <= self.from {
+                    cur_offset = add_repetition(co, repetition); // co + *rep_dur;
+                } else {
+                    cur_offset = co;
                 }
+
+                start = if self.from > cur_offset {
+                                self.from
+                            } else {
+                                cur_offset
+                            };
+                end = if self.to < cur_offset + self.rule.length {
+                                self.to
+                            } else {
+                                cur_offset + self.rule.length
+                            };
             }
 
             self.cur_offset = Some(cur_offset);
