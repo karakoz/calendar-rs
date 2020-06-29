@@ -1,23 +1,24 @@
+use crate::rule_item::RuleItem;
+use crate::rule::Rule;
 use crate::rule_iterator::RuleIterator;
 use crate::time_interval::TimeInterval;
-use crate::rule::Rule;
 use chrono::NaiveDateTime;
 
-pub struct MultiRuleIterator<'a> {
-    pub rules: &'a Vec<Rule>,
+pub struct MultiRuleIterator<'a, V: Sized> {
+    pub rules: &'a Vec<Rule<V>>,
     pub from: NaiveDateTime,
     pub to: NaiveDateTime,
     pub cycle_start: NaiveDateTime,
     pub cur_date: Option<NaiveDateTime>,
-    pub inner_iterators: Option<Vec<RuleIterator<'a>>>,
+    pub inner_iterators: Option<Vec<RuleIterator<'a, V>>>,
     cur_iterator_index: usize
 }
 
-impl<'a> MultiRuleIterator<'a> {
-    pub fn new(rules: &'a Vec<Rule>, 
+impl<'a, V: Sized> MultiRuleIterator<'a, V> {
+    pub fn new(rules: &'a Vec<Rule<V>>, 
         cycle_start: NaiveDateTime,
         start_offset: NaiveDateTime, 
-        end: NaiveDateTime
+        end: NaiveDateTime,
     ) -> Self {
         MultiRuleIterator {
             rules: rules,
@@ -31,13 +32,13 @@ impl<'a> MultiRuleIterator<'a> {
     }
 }
 
-impl<'a> Iterator for MultiRuleIterator<'a> {
-    type Item = TimeInterval; 
+impl<'a, V: Sized> Iterator for MultiRuleIterator<'a, V> {
+    type Item = (TimeInterval, &'a RuleItem); 
 
-    fn next(&mut self) -> Option<TimeInterval> {
+    fn next(&mut self) -> Option<(TimeInterval, &'a RuleItem)> {
 
         if let None = self.inner_iterators {
-            let mut iters = Vec::<RuleIterator>::new();
+            let mut iters = Vec::<RuleIterator<V>>::new();
             // let rule = &self.rules[0];
 
             for r in self.rules {
@@ -66,7 +67,6 @@ impl<'a> Iterator for MultiRuleIterator<'a> {
                 }
 
                 let fi = &mut inner[self.cur_iterator_index];
-
                 let res = fi.next();
 
                 if let None = res {

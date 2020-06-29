@@ -1,19 +1,24 @@
 use crate::rule_iterator::RuleIterator;
 use chrono::NaiveDateTime;
-use crate::offset_kind::OffsetKind;
-use crate::repetition_kind::RepetitionKind;
-use chrono::Duration;
+use crate::rule_item::RuleItem;
 
 #[derive(Clone)]
-pub struct Rule {
-    pub offset: OffsetKind,
-    pub repetition: Option<RepetitionKind>,
-    pub length: Duration,
-    pub inner_rules: Option<Vec<Rule>>,
+pub struct Rule<V: Sized> {
+    pub rule_item: RuleItem,
+    pub priority: i32,
+    pub value: Option<V>,
+    pub inner_rules: Option<Vec<Rule<V>>>,
 }
 
-impl Rule {
-    pub fn get_iterator(&self, cycle_start: NaiveDateTime, from: NaiveDateTime, to: NaiveDateTime) -> RuleIterator {
+
+
+impl<V: Sized> Rule<V> {
+    pub fn get_iterator(&self, 
+        cycle_start: NaiveDateTime, 
+        from: NaiveDateTime, 
+        to: NaiveDateTime) 
+    -> RuleIterator<V>
+    {
         RuleIterator {
             rule: self,
             from,
@@ -21,6 +26,15 @@ impl Rule {
             cur_offset: None,
             cycle_start,
             inner_iterator: None
+        }
+    }
+
+    pub fn from_rule_item(rule_item: RuleItem, priority: i32, value: V, inner_rules: Option<Vec<Rule<V>>>) -> Self {
+        Rule {
+            rule_item: rule_item,
+            priority,
+            value: Some(value),
+            inner_rules
         }
     }
 }
