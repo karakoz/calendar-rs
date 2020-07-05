@@ -37,7 +37,7 @@ impl<'a, V: Sized> Iterator for MultiRuleIterator<'a, V> {
 
     fn next(&mut self) -> Option<(TimeInterval, &'a RuleItem)> {
 
-        if let None = self.inner_iterators {
+        if self.inner_iterators.is_none() {
             let mut iters = Vec::<RuleIterator<V>>::new();
             // let rule = &self.rules[0];
 
