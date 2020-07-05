@@ -2,18 +2,6 @@ use calendar::union_iterator::UnionIterator;
 use calendar::time_interval::TimeInterval;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime};
 
-#[cfg(test)]
-use mockall::{mock, predicate::*};
-
-mock! {
-    MyIter {}
-    trait Iterator {
-        type Item=TimeInterval;
-
-        fn next(&mut self) -> Option<TimeInterval>;
-    }
-}
-
 #[test]
 fn union_works() {
     let date = NaiveDate::from_ymd(2020, 1, 10);
