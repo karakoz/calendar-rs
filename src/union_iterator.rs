@@ -1,15 +1,15 @@
 use crate::time_interval::TimeInterval;
 use std::cmp::Ordering;
 
-pub struct UnionIterator { 
-    iterators: Vec<Box<dyn Iterator<Item = TimeInterval>>>,
+pub struct UnionIterator<I: Iterator<Item = TimeInterval>> { 
+    iterators: Vec<I>,
     cur: Vec<Option<TimeInterval>>,
     cur_index: usize,
     is_init: bool,
 }
 
-impl UnionIterator {
-    pub fn new(iterators: Vec<Box<dyn Iterator<Item = TimeInterval>>>) -> Self {
+impl<I: Iterator<Item = TimeInterval>> UnionIterator<I> {
+    pub fn new(iterators: Vec<I>) -> Self {
         let len = iterators.len();
         UnionIterator {
             iterators,
@@ -81,7 +81,7 @@ impl UnionIterator {
     }
 }
 
-impl Iterator for UnionIterator {
+impl<I: Iterator<Item = TimeInterval>> Iterator for UnionIterator<I> {
     type Item = TimeInterval;
 
     fn next(&mut self) -> Option<TimeInterval> {
