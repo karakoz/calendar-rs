@@ -8,6 +8,7 @@ use calendar::repetition_kind::RepetitionKind;
 use calendar::time_interval::TimeInterval;
 use chrono::{Duration};
 
+mod iter_tests;
 
 #[test]
 fn rule_works() {

@@ -32,7 +32,7 @@ impl<I: Iterator<Item = TimeInterval>> Iterator for SubtractIterator<I> {
                 return None
             }
     
-            let mut src = cur.0.unwrap();
+            let src = cur.0.unwrap();
     
             if cur.1.is_none() {
                 cur.0 = self.source.next();
